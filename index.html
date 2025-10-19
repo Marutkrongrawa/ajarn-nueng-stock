@@ -7,28 +7,112 @@
   <style>
     body {
       font-family: sans-serif;
-      background: #f5f7fa;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
       text-align: center;
-      padding: 50px;
-      color: #333;
     }
     h1 {
       color: #00695c;
     }
-    .box {
+    form {
       background: white;
-      padding: 30px;
+      padding: 20px;
       border-radius: 15px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       display: inline-block;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #00695c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #004d40;
+    }
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    th {
+      background: #00695c;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Ajarn Nueng Stock</h1>
-    <p>ระบบจัดการคลังสินค้าเนื้อหมูและไก่แบบส่วนตัว</p>
-    <p>📦 กำลังพัฒนาโดยคุณหนึ่ง</p>
-  </div>
+  <h1>ระบบจัดการสต็อกสินค้า</h1>
+
+  <form id="stockForm">
+    <input type="text" id="name" placeholder="ชื่อสินค้า" required>
+    <input type="number" id="quantity" placeholder="จำนวน" required>
+    <input type="number" id="price" placeholder="ราคา/หน่วย" required>
+    <button type="submit">เพิ่มสินค้า</button>
+  </form>
+
+  <table id="stockTable">
+    <thead>
+      <tr>
+        <th>ชื่อสินค้า</th>
+        <th>จำนวน</th>
+        <th>ราคา/หน่วย</th>
+        <th>รวม</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById('stockForm');
+    const tableBody = document.querySelector('#stockTable tbody');
+
+    function loadStock() {
+      const stock = JSON.parse(localStorage.getItem('stock')) || [];
+      tableBody.innerHTML = '';
+      stock.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.quantity}</td>
+          <td>${item.price}</td>
+          <td>${item.quantity * item.price}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const price = parseFloat(document.getElementById('price').value);
+
+      const stock = JSON.parse(localStorage.getItem('stock')) || [];
+      stock.push({ name, quantity, price });
+      localStorage.setItem('stock', JSON.stringify(stock));
+
+      form.reset();
+      loadStock();
+    });
+
+    loadStock();
+  </script>
 </body>
 </html>
