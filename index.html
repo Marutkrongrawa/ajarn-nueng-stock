@@ -95,67 +95,80 @@
     <tbody></tbody>
   </table>
 
-  <script>
-    const form = document.getElementById('stockForm');
-    const tableBody = document.querySelector('#stockTable tbody');
-    let editIndex = null;
+<script>
+  const form = document.getElementById('stockForm');
+  const tableBody = document.querySelector('#stockTable tbody');
+  let editIndex = null;
 
-    function loadStock() {
-      const stock = JSON.parse(localStorage.getItem('stock')) || [];
-      tableBody.innerHTML = '';
-      stock.forEach((item, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${item.name}</td>
-          <td>${item.quantity}</td>
-          <td>${item.price}</td>
-          <td>${item.quantity * item.price}</td>
-          <td>
-            <button class="action-btn edit-btn" onclick="editItem(${index})">แก้ไข</button>
-            <button class="action-btn delete-btn" onclick="deleteItem(${index})">ลบ</button>
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-    }
+  function loadStock() {
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+    tableBody.innerHTML = '';
+    let totalValue = 0;
 
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('name').value;
-      const quantity = parseInt(document.getElementById('quantity').value);
-      const price = parseFloat(document.getElementById('price').value);
+    stock.forEach((item, index) => {
+      const itemTotal = item.quantity * item.price;
+      totalValue += itemTotal;
 
-      const stock = JSON.parse(localStorage.getItem('stock')) || [];
-
-      if (editIndex !== null) {
-        stock[editIndex] = { name, quantity, price };
-        editIndex = null;
-      } else {
-        stock.push({ name, quantity, price });
-      }
-
-      localStorage.setItem('stock', JSON.stringify(stock));
-      form.reset();
-      loadStock();
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${item.name}</td>
+        <td>${item.quantity}</td>
+        <td>${item.price}</td>
+        <td>${itemTotal}</td>
+        <td>
+          <button class="action-btn edit-btn" onclick="editItem(${index})">แก้ไข</button>
+          <button class="action-btn delete-btn" onclick="deleteItem(${index})">ลบ</button>
+        </td>
+      `;
+      tableBody.appendChild(row);
     });
 
-    function deleteItem(index) {
-      const stock = JSON.parse(localStorage.getItem('stock')) || [];
-      stock.splice(index, 1);
-      localStorage.setItem('stock', JSON.stringify(stock));
-      loadStock();
+    // แสดงมูลค่ารวมทั้งหมดด้านล่างตาราง
+    const totalRow = document.createElement('tr');
+    totalRow.innerHTML = `
+      <td colspan="3"><b>มูลค่ารวมทั้งหมด</b></td>
+      <td colspan="2"><b>${totalValue.toLocaleString()} บาท</b></td>
+    `;
+    tableBody.appendChild(totalRow);
+  }
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const price = parseFloat(document.getElementById('price').value);
+
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+
+    if (editIndex !== null) {
+      stock[editIndex] = { name, quantity, price };
+      editIndex = null;
+    } else {
+      stock.push({ name, quantity, price });
     }
 
-    function editItem(index) {
-      const stock = JSON.parse(localStorage.getItem('stock')) || [];
-      const item = stock[index];
-      document.getElementById('name').value = item.name;
-      document.getElementById('quantity').value = item.quantity;
-      document.getElementById('price').value = item.price;
-      editIndex = index;
-    }
-
+    localStorage.setItem('stock', JSON.stringify(stock));
+    form.reset();
     loadStock();
-  </script>
+  });
+
+  function deleteItem(index) {
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+    stock.splice(index, 1);
+    localStorage.setItem('stock', JSON.stringify(stock));
+    loadStock();
+  }
+
+  function editItem(index) {
+    const stock = JSON.parse(localStorage.getItem('stock')) || [];
+    const item = stock[index];
+    document.getElementById('name').value = item.name;
+    document.getElementById('quantity').value = item.quantity;
+    document.getElementById('price').value = item.price;
+    editIndex = index;
+  }
+
+  loadStock();
+</script>
 </body>
                    </html>
