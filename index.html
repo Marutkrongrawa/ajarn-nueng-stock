@@ -50,10 +50,25 @@
     th, td {
       border: 1px solid #ccc;
       padding: 10px;
+      text-align: center;
     }
     th {
       background: #00695c;
       color: white;
+    }
+    .action-btn {
+      background: #ff7043;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .delete-btn {
+      background: #d32f2f;
+    }
+    .edit-btn {
+      background: #1976d2;
     }
   </style>
 </head>
@@ -64,7 +79,7 @@
     <input type="text" id="name" placeholder="ชื่อสินค้า" required>
     <input type="number" id="quantity" placeholder="จำนวน" required>
     <input type="number" id="price" placeholder="ราคา/หน่วย" required>
-    <button type="submit">เพิ่มสินค้า</button>
+    <button type="submit">บันทึก</button>
   </form>
 
   <table id="stockTable">
@@ -74,6 +89,7 @@
         <th>จำนวน</th>
         <th>ราคา/หน่วย</th>
         <th>รวม</th>
+        <th>จัดการ</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -82,17 +98,22 @@
   <script>
     const form = document.getElementById('stockForm');
     const tableBody = document.querySelector('#stockTable tbody');
+    let editIndex = null;
 
     function loadStock() {
       const stock = JSON.parse(localStorage.getItem('stock')) || [];
       tableBody.innerHTML = '';
-      stock.forEach(item => {
+      stock.forEach((item, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${item.name}</td>
           <td>${item.quantity}</td>
           <td>${item.price}</td>
           <td>${item.quantity * item.price}</td>
+          <td>
+            <button class="action-btn edit-btn" onclick="editItem(${index})">แก้ไข</button>
+            <button class="action-btn delete-btn" onclick="deleteItem(${index})">ลบ</button>
+          </td>
         `;
         tableBody.appendChild(row);
       });
@@ -105,12 +126,34 @@
       const price = parseFloat(document.getElementById('price').value);
 
       const stock = JSON.parse(localStorage.getItem('stock')) || [];
-      stock.push({ name, quantity, price });
-      localStorage.setItem('stock', JSON.stringify(stock));
 
+      if (editIndex !== null) {
+        stock[editIndex] = { name, quantity, price };
+        editIndex = null;
+      } else {
+        stock.push({ name, quantity, price });
+      }
+
+      localStorage.setItem('stock', JSON.stringify(stock));
       form.reset();
       loadStock();
     });
+
+    function deleteItem(index) {
+      const stock = JSON.parse(localStorage.getItem('stock')) || [];
+      stock.splice(index, 1);
+      localStorage.setItem('stock', JSON.stringify(stock));
+      loadStock();
+    }
+
+    function editItem(index) {
+      const stock = JSON.parse(localStorage.getItem('stock')) || [];
+      const item = stock[index];
+      document.getElementById('name').value = item.name;
+      document.getElementById('quantity').value = item.quantity;
+      document.getElementById('price').value = item.price;
+      editIndex = index;
+    }
 
     loadStock();
   </script>
