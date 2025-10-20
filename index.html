@@ -1,174 +1,52 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ajarn Nueng Stock</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f0f4f8;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
-      color: #00695c;
-    }
-    form {
-      background: white;
-      padding: 20px;
-      border-radius: 15px;
-      display: inline-block;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    input {
-      padding: 10px;
-      margin: 5px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #00695c;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #004d40;
-    }
-    table {
-      margin: 20px auto;
-      border-collapse: collapse;
-      width: 90%;
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    th {
-      background: #00695c;
-      color: white;
-    }
-    .action-btn {
-      background: #ff7043;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .delete-btn {
-      background: #d32f2f;
-    }
-    .edit-btn {
-      background: #1976d2;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <h1>ระบบจัดการสต็อกสินค้า</h1>
+  <h2>📦 รายการสินค้าในสต๊อก</h2>
+  <div id="product-list">กำลังโหลดข้อมูล...</div>
 
-  <form id="stockForm">
-    <input type="text" id="name" placeholder="ชื่อสินค้า" required>
-    <input type="number" id="quantity" placeholder="จำนวน" required>
-    <input type="number" id="price" placeholder="ราคา/หน่วย" required>
-    <button type="submit">บันทึก</button>
-  </form>
+  <script>
+    // 🔧 กรอกค่าของคุณตรงนี้
+    const SUPABASE_URL = "https://oopbccuvragkeejntxqv.supabase.co"; // <== แก้เป็นของคุณ
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9vcGJjY3V2cmFna2Vlam50eHF2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5MDA5NTEsImV4cCI6MjA3NjQ3Njk1MX0.03X_jtadcctq29DVH590Yvd7kAcHlJahONWlZIRQPUY..."; // <== แก้เป็น anon public key ของคุณ
 
-  <table id="stockTable">
-    <thead>
-      <tr>
-        <th>ชื่อสินค้า</th>
-        <th>จำนวน</th>
-        <th>ราคา/หน่วย</th>
-        <th>รวม</th>
-        <th>จัดการ</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-<script>
-  const form = document.getElementById('stockForm');
-  const tableBody = document.querySelector('#stockTable tbody');
-  let editIndex = null;
+    async function loadProducts() {
+      const { data, error } = await supabase.from("products").select("*");
+      if (error) {
+        document.getElementById("product-list").innerText = "เกิดข้อผิดพลาด: " + error.message;
+        return;
+      }
 
-  function loadStock() {
-    const stock = JSON.parse(localStorage.getItem('stock')) || [];
-    tableBody.innerHTML = '';
-    let totalValue = 0;
+      if (data.length === 0) {
+        document.getElementById("product-list").innerText = "ยังไม่มีข้อมูลสินค้า";
+        return;
+      }
 
-    stock.forEach((item, index) => {
-      const itemTotal = item.quantity * item.price;
-      totalValue += itemTotal;
+      const html = data
+        .map(
+          (p) => `
+          <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+            <strong>${p.name}</strong><br/>
+            หมวดหมู่: ${p.category || "-"}<br/>
+            ราคา: ${p.price} บาท<br/>
+            คงเหลือ: ${p.quantity} ชิ้น<br/>
+            <small>${p.description || ""}</small>
+          </div>
+        `
+        )
+        .join("");
 
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${item.name}</td>
-        <td>${item.quantity}</td>
-        <td>${item.price}</td>
-        <td>${itemTotal}</td>
-        <td>
-          <button class="action-btn edit-btn" onclick="editItem(${index})">แก้ไข</button>
-          <button class="action-btn delete-btn" onclick="deleteItem(${index})">ลบ</button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-
-    // แสดงมูลค่ารวมทั้งหมดด้านล่างตาราง
-    const totalRow = document.createElement('tr');
-    totalRow.innerHTML = `
-      <td colspan="3"><b>มูลค่ารวมทั้งหมด</b></td>
-      <td colspan="2"><b>${totalValue.toLocaleString()} บาท</b></td>
-    `;
-    tableBody.appendChild(totalRow);
-  }
-
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const name = document.getElementById('name').value;
-    const quantity = parseInt(document.getElementById('quantity').value);
-    const price = parseFloat(document.getElementById('price').value);
-
-    const stock = JSON.parse(localStorage.getItem('stock')) || [];
-
-    if (editIndex !== null) {
-      stock[editIndex] = { name, quantity, price };
-      editIndex = null;
-    } else {
-      stock.push({ name, quantity, price });
+      document.getElementById("product-list").innerHTML = html;
     }
 
-    localStorage.setItem('stock', JSON.stringify(stock));
-    form.reset();
-    loadStock();
-  });
-
-  function deleteItem(index) {
-    const stock = JSON.parse(localStorage.getItem('stock')) || [];
-    stock.splice(index, 1);
-    localStorage.setItem('stock', JSON.stringify(stock));
-    loadStock();
-  }
-
-  function editItem(index) {
-    const stock = JSON.parse(localStorage.getItem('stock')) || [];
-    const item = stock[index];
-    document.getElementById('name').value = item.name;
-    document.getElementById('quantity').value = item.quantity;
-    document.getElementById('price').value = item.price;
-    editIndex = index;
-  }
-
-  loadStock();
-</script>
+    loadProducts();
+  </script>
 </body>
-                   </html>
+</html>
